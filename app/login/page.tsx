@@ -8,17 +8,29 @@ export default function LoginPage() {
   const [email, setEmail] = useState<string>("")
   const [password, setPassword] = useState<string>("")
   const [error, setError] = useState<string | null>(null)
+  const [messageType, setMessageType] = useState<'success' | 'error' | null>(null)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+
   async function handleLogin() {
     setError(null)
+    setIsLoading(true)
     try {
       const res = await api.post("/auth/login", { email, password })
       if (res.data.success) {
-        router.push('/dashboard') 
+        setError("Login successful! Redirecting...")
+        setMessageType("success")
+        setTimeout(() => {
+          router.push('/dashboard')
+        }, 1000)
+      } else {
+        setError(res.data.message)
+        setMessageType("error")
       }
-      setError(res.data.message) // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Login failed");
-      console.log(error)
+    } catch (err: any) { // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setError(err?.response?.data?.message ?? "Login failed")
+      setMessageType("error")
+    } finally {
+      setIsLoading(false)
     }
   }
   return (
@@ -63,16 +75,21 @@ export default function LoginPage() {
           {/* Button */}
           <button
             type="submit"
-            className="w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 transition text-white font-semibold"
+            disabled={isLoading}
+            className="w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-600 disabled:cursor-not-allowed transition text-white font-semibold"
             onClick={(e) => {
               e.preventDefault()
               handleLogin()
             }}
           >
-            Login
+            {isLoading ? "Logging in..." : "Login"}
           </button>
           {error && (
-            <div className="p-3 rounded-lg bg-red-500/20 border border-red-500 text-red-400 text-sm">
+            <div className={`p-3 rounded-lg border text-sm ${
+              messageType === 'success'
+                ? 'bg-green-500/20 border-green-500 text-green-400'
+                : 'bg-red-500/20 border-red-500 text-red-400'
+            }`}>
               {error}
             </div>
           )}
@@ -81,7 +98,8 @@ export default function LoginPage() {
         {/* Footer */}
         <p className="text-slate-400 text-sm text-center mt-6">
           Don’t have an account?{" "}
-          <span className="text-indigo-400 hover:underline cursor-pointer">
+          <span className="text-indigo-400 hover:underline cursor-pointer"
+            onClick={() => router.push('/register')}>
             Register
           </span>
         </p>

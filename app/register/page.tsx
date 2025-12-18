@@ -10,19 +10,29 @@ export default function RegisterPage() {
   const [password, setPassword] = useState<string>("")
   const [confirmPassword, setConfirmPassword] = useState<string>("")
   const [error, setError] = useState<string | null>(null)
+  const [messageType, setMessageType] = useState<'success' | 'error' | null>(null)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
 
   async function handleRegister() {
     setError(null)
-
+    setIsLoading(true)
     try {
-      const res = await api.post('/auth/register', { username, email, password ,confirmPassword})
+      const res = await api.post('/auth/register', { username, email, password, confirmPassword })
       if (res.data.success) {
-        router.push('/verifyotp')
-      }else{
+        setError("Registration successful! Redirecting...")
+        setMessageType("success")
+        setTimeout(() => {
+          router.push(`/register/verifyotp?email=${encodeURIComponent(email)}`)
+        }, 1000)
+      } else {
         setError(res.data.message)
-      }// eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
+        setMessageType("error")
+      }
+    } catch (err: any) { // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setError(err?.response?.data?.message ?? "Registration failed")
+      setMessageType("error")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -94,16 +104,21 @@ export default function RegisterPage() {
           {/* Button */}
           <button
             type="submit"
-            className="w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 transition text-white font-semibold"
+            disabled={isLoading}
+            className="w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-600 disabled:cursor-not-allowed transition text-white font-semibold"
             onClick={(e) => {
               e.preventDefault()
               handleRegister()
             }}
           >
-            Register
+            {isLoading ? "Registering..." : "Register"}
           </button>
           {error && (
-            <div className="p-3 rounded-lg bg-red-500/20 border border-red-500 text-red-400 text-sm">
+            <div className={`p-3 rounded-lg border text-sm ${
+              messageType === 'success'
+                ? 'bg-green-500/20 border-green-500 text-green-400'
+                : 'bg-red-500/20 border-red-500 text-red-400'
+            }`}>
               {error}
             </div>
           )}
@@ -112,7 +127,8 @@ export default function RegisterPage() {
         {/* Footer */}
         <p className="text-slate-400 text-sm text-center mt-6">
           Already have an account?{" "}
-          <span className="text-indigo-400 hover:underline cursor-pointer">
+          <span className="text-indigo-400 hover:underline cursor-pointer"
+          onClick={()=>router.push('/login')}>
             Login
           </span>
         </p>
