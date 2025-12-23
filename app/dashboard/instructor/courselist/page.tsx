@@ -31,6 +31,14 @@ export default function InstructorCoursesPage() {
       console.error("Publish failed:", error.response?.data || error.message)
     }
   }
+  async function deleteCourse(courseId:string){
+    try{
+      await api.delete(`/instructor/courses/${courseId}`)
+      setCourses(courses.filter(course => course._id !== courseId))
+    }catch(error:any){
+      console.error("Error occured",error.message);
+    }
+  }
   return (
     <div className="p-8 space-y-6">
 
@@ -85,7 +93,10 @@ export default function InstructorCoursesPage() {
                   }}>
                     Unpublish
                   </button>
-                  <button className="px-3 py-1.5 rounded bg-red-600 text-white text-sm">
+                  <button className="px-3 py-1.5 rounded bg-red-600 text-white text-sm"
+                  onClick={()=>{
+                    deleteCourse(course._id)
+                  }}>
                     Delete
                   </button>
                 </div>
