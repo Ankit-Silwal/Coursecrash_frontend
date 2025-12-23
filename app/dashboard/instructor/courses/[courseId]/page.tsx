@@ -1,5 +1,15 @@
-export default function CourseDetailsPage()
-{
+"use client"
+import { use } from 'react'
+
+type PageProps = {
+  params: Promise<{
+    courseId: string
+  }>
+}
+export default function CourseDetailsPage({
+  params
+}: PageProps) {
+  const { courseId } = use(params)
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-6">
 
@@ -48,20 +58,32 @@ export default function CourseDetailsPage()
       <div className="space-y-3">
 
         {/* Lesson Card */}
-        <div className="flex items-center justify-between border rounded-lg p-4 hover:bg-gray-50">
+        <div
+          className="
+            flex items-center justify-between
+            rounded-lg
+            border border-gray-200
+            bg-gray-100
+            p-4
+            transition
+            hover:bg-gray-200
+            hover:border-gray-300
+            hover:shadow-sm
+          "
+        >
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-400 w-6">01</span>
+            <span className="text-sm text-gray-500 w-6">01</span>
             <div>
-              <h4 className="font-medium">Introduction</h4>
-              <p className="text-xs text-gray-500">Video lesson</p>
+              <h4 className="font-medium text-gray-900">Introduction</h4>
+              <p className="text-xs text-gray-600">Video lesson</p>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="text-sm text-blue-600 hover:underline">
+            <button className="text-sm text-blue-700 hover:underline">
               Upload
             </button>
-            <button className="text-sm text-gray-600 hover:underline">
+            <button className="text-sm text-gray-700 hover:underline">
               Edit
             </button>
             <button className="text-sm text-red-600 hover:underline">
@@ -71,20 +93,32 @@ export default function CourseDetailsPage()
         </div>
 
         {/* Lesson Card */}
-        <div className="flex items-center justify-between border rounded-lg p-4 hover:bg-gray-50">
+        <div
+          className="
+            flex items-center justify-between
+            rounded-lg
+            border border-gray-200
+            bg-gray-100
+            p-4
+            transition
+            hover:bg-gray-200
+            hover:border-gray-300
+            hover:shadow-sm
+          "
+        >
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-400 w-6">02</span>
+            <span className="text-sm text-gray-500 w-6">02</span>
             <div>
-              <h4 className="font-medium">Getting Started</h4>
-              <p className="text-xs text-gray-500">Text lesson</p>
+              <h4 className="font-medium text-gray-900">Getting Started</h4>
+              <p className="text-xs text-gray-600">Text lesson</p>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="text-sm text-blue-600 hover:underline">
+            <button className="text-sm text-blue-700 hover:underline">
               Upload
             </button>
-            <button className="text-sm text-gray-600 hover:underline">
+            <button className="text-sm text-gray-700 hover:underline">
               Edit
             </button>
             <button className="text-sm text-red-600 hover:underline">
@@ -94,20 +128,32 @@ export default function CourseDetailsPage()
         </div>
 
         {/* Lesson Card */}
-        <div className="flex items-center justify-between border rounded-lg p-4 hover:bg-gray-50">
+        <div
+          className="
+            flex items-center justify-between
+            rounded-lg
+            border border-gray-200
+            bg-gray-100
+            p-4
+            transition
+            hover:bg-gray-200
+            hover:border-gray-300
+            hover:shadow-sm
+          "
+        >
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-400 w-6">03</span>
+            <span className="text-sm text-gray-500 w-6">03</span>
             <div>
-              <h4 className="font-medium">Advanced Concepts</h4>
-              <p className="text-xs text-gray-500">Audio lesson</p>
+              <h4 className="font-medium text-gray-900">Advanced Concepts</h4>
+              <p className="text-xs text-gray-600">Audio lesson</p>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="text-sm text-blue-600 hover:underline">
+            <button className="text-sm text-blue-700 hover:underline">
               Upload
             </button>
-            <button className="text-sm text-gray-600 hover:underline">
+            <button className="text-sm text-gray-700 hover:underline">
               Edit
             </button>
             <button className="text-sm text-red-600 hover:underline">

@@ -2,6 +2,7 @@
 
 import api from "@/utils/axios"
 import { useEffect, useState } from "react"
+import Link from "next/link"
 
 type Course = {
   _id: string
@@ -17,7 +18,9 @@ export default function InstructorCoursesPage() {
   const [description, setDescription] = useState("")
   const [isCreating, setIsCreating] = useState(false)
 
-  // Centralized fetch to reuse after mutations
+  /* =======================
+     FETCH COURSES
+  ======================= */
   const fetchCourses = async () => {
     try {
       const res = await api.get("/instructor/courses")
@@ -28,21 +31,18 @@ export default function InstructorCoursesPage() {
     }
   }
 
-  /* =======================
-     FETCH COURSES
-  ======================= */
   useEffect(() => {
     fetchCourses()
   }, [])
 
+  /* =======================
+     ACTIONS
+  ======================= */
   async function createCourse() {
     if (!title.trim() || !description.trim()) return
     try {
       setIsCreating(true)
-      const res = await api.post("/instructor/courses", {
-        title,
-        description,
-      })
+      await api.post("/instructor/courses", { title, description })
       setShowCreateModal(false)
       setTitle("")
       setDescription("")
@@ -53,10 +53,11 @@ export default function InstructorCoursesPage() {
       setIsCreating(false)
     }
   }
+
   async function publishCourse(courseId: string) {
     await api.post(`/instructor/courses/${courseId}/publish`)
-    setCourses((prev) =>
-      prev.map((c) =>
+    setCourses(prev =>
+      prev.map(c =>
         c._id === courseId ? { ...c, status: "published" } : c
       )
     )
@@ -64,15 +65,16 @@ export default function InstructorCoursesPage() {
 
   async function unpublishCourse(courseId: string) {
     await api.post(`/instructor/courses/${courseId}/unpublish`)
-    setCourses((prev) =>
-      prev.map((c) =>
+    setCourses(prev =>
+      prev.map(c =>
         c._id === courseId ? { ...c, status: "draft" } : c
       )
     )
   }
+
   async function deleteCourse(courseId: string) {
     await api.delete(`/instructor/courses/${courseId}`)
-    setCourses((prev) => prev.filter((c) => c._id !== courseId))
+    setCourses(prev => prev.filter(c => c._id !== courseId))
   }
 
   return (
@@ -85,7 +87,7 @@ export default function InstructorCoursesPage() {
         </h1>
 
         <button
-          className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white"
+          className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition text-white"
           onClick={() => setShowCreateModal(true)}
         >
           + Create Course
@@ -94,10 +96,20 @@ export default function InstructorCoursesPage() {
 
       {/* COURSES GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {courses.map((course) => (
+        {courses.map(course => (
           <div
             key={course._id}
-            className="bg-slate-900 border border-slate-700 rounded-xl p-5 space-y-4"
+            className="
+              bg-slate-900
+              border border-slate-700
+              rounded-xl
+              p-5
+              space-y-4
+              transition
+              hover:bg-slate-800
+              hover:border-slate-600
+              hover:shadow-lg
+            "
           >
             <div>
               <h2 className="text-lg font-semibold text-white">
@@ -109,30 +121,32 @@ export default function InstructorCoursesPage() {
             </div>
 
             <span
-              className={`px-2 py-1 rounded text-xs ${
-                course.status === "published"
+              className={`inline-block px-2 py-1 rounded text-xs ${course.status === "published"
                   ? "bg-green-500/20 text-green-400"
                   : "bg-yellow-500/20 text-yellow-400"
-              }`}
+                }`}
             >
               {course.status}
             </span>
 
             <div className="flex flex-wrap gap-2">
-              <button className="px-3 py-1.5 bg-slate-700 text-white rounded text-sm">
+              <Link
+                href={`/dashboard/instructor/courses/${course._id}`}
+                className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 transition text-white rounded text-sm"
+              >
                 View
-              </button>
+              </Link>
 
               {course.status === "draft" ? (
                 <button
-                  className="px-3 py-1.5 bg-indigo-600 text-white rounded text-sm"
+                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 transition text-white rounded text-sm"
                   onClick={() => publishCourse(course._id)}
                 >
                   Publish
                 </button>
               ) : (
                 <button
-                  className="px-3 py-1.5 bg-yellow-600 text-white rounded text-sm"
+                  className="px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 transition text-white rounded text-sm"
                   onClick={() => unpublishCourse(course._id)}
                 >
                   Unpublish
@@ -140,7 +154,7 @@ export default function InstructorCoursesPage() {
               )}
 
               <button
-                className="px-3 py-1.5 bg-red-600 text-white rounded text-sm"
+                className="px-3 py-1.5 bg-red-600 hover:bg-red-500 transition text-white rounded text-sm"
                 onClick={() => deleteCourse(course._id)}
               >
                 Delete
@@ -153,10 +167,10 @@ export default function InstructorCoursesPage() {
       {/* CREATE COURSE MODAL */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          
+
           {/* Overlay */}
           <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setShowCreateModal(false)}
           />
 
@@ -172,8 +186,9 @@ export default function InstructorCoursesPage() {
               </label>
               <input
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 rounded bg-slate-800 border border-slate-700 text-white"
+                onChange={e => setTitle(e.target.value)}
+                className="w-full px-3 py-2 rounded bg-slate-800 border border-slate-700 text-white
+                           focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
 
@@ -183,22 +198,23 @@ export default function InstructorCoursesPage() {
               </label>
               <textarea
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={e => setDescription(e.target.value)}
                 rows={4}
-                className="w-full px-3 py-2 rounded bg-slate-800 border border-slate-700 text-white resize-none"
+                className="w-full px-3 py-2 rounded bg-slate-800 border border-slate-700 text-white resize-none
+                           focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
 
             <div className="flex justify-end gap-3">
               <button
-                className="px-4 py-2 bg-slate-700 text-white rounded"
+                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 transition text-white rounded"
                 onClick={() => setShowCreateModal(false)}
               >
                 Cancel
               </button>
 
               <button
-                className="px-4 py-2 bg-indigo-600 text-white rounded disabled:opacity-60"
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 transition text-white rounded disabled:opacity-60"
                 onClick={createCourse}
                 disabled={isCreating}
               >
