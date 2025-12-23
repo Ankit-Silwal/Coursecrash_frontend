@@ -11,6 +11,22 @@ export default function LoginPage() {
   const [messageType, setMessageType] = useState<'success' | 'error' | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const res = await api.get("/auth/status")
+        console.log(res.data.loggedIn)
+        if (res.data.loggedIn) {
+          router.push('/dashboard')
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    }
+    
+    checkSession()
+  }, [router])
+
   async function handleLogin() {
     setError(null)
     setIsLoading(true)

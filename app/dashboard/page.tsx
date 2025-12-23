@@ -27,9 +27,14 @@ export default function DashboardPage() {
     checkAuthStatus()
   }, [router])
 
-  const handleLogout = () => {
-    router.push('/login')
-    api.get('/auth/logout')
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout').catch(() => {
+      })
+    } finally {
+      setUser(null)
+      router.push('/login')
+    }
   }
 
   if (isLoading) {
