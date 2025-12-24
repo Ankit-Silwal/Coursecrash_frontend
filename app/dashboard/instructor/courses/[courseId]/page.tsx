@@ -1,15 +1,41 @@
 "use client"
 import { use } from 'react'
+import api from '@/utils/axios'
+import { useEffect,useState } from 'react'
+import { Cinzel } from 'next/font/google'
 
 type PageProps = {
   params: Promise<{
     courseId: string
   }>
 }
+type Lesson = {
+  _id: string
+  courseId:string
+  title: string
+  type:string
+  order:number
+  contentUrl:string 
+}
 export default function CourseDetailsPage({
   params
 }: PageProps) {
   const { courseId } = use(params)
+  const [lessons,setLessons]=useState<Lesson[]>([])
+  const fetchLessons=async ()=>{
+    try{
+      const res=await api.get(`/instructor/courses/${courseId}/lessons`)
+      const list=res.data.data.lessons;
+      setLessons(list);
+    }catch(err){
+      console.error(err);
+    }
+  }
+  useEffect(()=>{
+    if(courseId){
+      fetchLessons()
+    }
+  },[courseId])
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-6">
 
@@ -56,9 +82,9 @@ export default function CourseDetailsPage({
 
       {/* Lessons List */}
       <div className="space-y-3">
-
-        {/* Lesson Card */}
-        <div
+        {lessons.map(lesson=>(
+          <div
+          key={lesson._id}
           className="
             flex items-center justify-between
             rounded-lg
@@ -72,10 +98,10 @@ export default function CourseDetailsPage({
           "
         >
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-500 w-6">01</span>
+            <span className="text-sm text-gray-500 w-6">{lesson.order}</span>
             <div>
-              <h4 className="font-medium text-gray-900">Introduction</h4>
-              <p className="text-xs text-gray-600">Video lesson</p>
+              <h4 className="font-medium text-gray-900">{lesson.title}</h4>
+              <p className="text-xs text-gray-600">{lesson.type} lesson</p>
             </div>
           </div>
 
@@ -91,77 +117,7 @@ export default function CourseDetailsPage({
             </button>
           </div>
         </div>
-
-        {/* Lesson Card */}
-        <div
-          className="
-            flex items-center justify-between
-            rounded-lg
-            border border-gray-200
-            bg-gray-100
-            p-4
-            transition
-            hover:bg-gray-200
-            hover:border-gray-300
-            hover:shadow-sm
-          "
-        >
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-500 w-6">02</span>
-            <div>
-              <h4 className="font-medium text-gray-900">Getting Started</h4>
-              <p className="text-xs text-gray-600">Text lesson</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button className="text-sm text-blue-700 hover:underline">
-              Upload
-            </button>
-            <button className="text-sm text-gray-700 hover:underline">
-              Edit
-            </button>
-            <button className="text-sm text-red-600 hover:underline">
-              Delete
-            </button>
-          </div>
-        </div>
-
-        {/* Lesson Card */}
-        <div
-          className="
-            flex items-center justify-between
-            rounded-lg
-            border border-gray-200
-            bg-gray-100
-            p-4
-            transition
-            hover:bg-gray-200
-            hover:border-gray-300
-            hover:shadow-sm
-          "
-        >
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-500 w-6">03</span>
-            <div>
-              <h4 className="font-medium text-gray-900">Advanced Concepts</h4>
-              <p className="text-xs text-gray-600">Audio lesson</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button className="text-sm text-blue-700 hover:underline">
-              Upload
-            </button>
-            <button className="text-sm text-gray-700 hover:underline">
-              Edit
-            </button>
-            <button className="text-sm text-red-600 hover:underline">
-              Delete
-            </button>
-          </div>
-        </div>
-
+        ))}
       </div>
     </div>
   );
