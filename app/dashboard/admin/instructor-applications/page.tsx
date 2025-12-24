@@ -7,13 +7,13 @@ import Link from "next/link"
 
 type Application = {
   _id: string
-  userId: {
-    _id: string
-    name: string
-    email: string
-  }
-  status: "pending" | "approved" | "rejected"
-  appliedAt: string
+  userId: string
+  username: string
+  name: string
+  status: string
+  createdAt: string
+  reviewedBy?: string | null
+  reviewedAt?: string | null
   bio?: string
   expertise?: string[]
 }
@@ -48,14 +48,19 @@ export default function InstructorApplicationsPage() {
   const fetchApplications = async () => {
     try {
       setLoading(true)
+      setError("")
       const res = await api.get("/admin/instructor-applications")
-      const appData = res.data.data || res.data.applications || res.data || []
-      // Ensure it's always an array
-      const appArray = Array.isArray(appData) ? appData : []
+      console.log("Full response:", res.data)
+      
+      // Get applications from data.applications
+      const appArray = res.data.data?.applications || []
+      console.log("Applications:", appArray)
+      
       setApplications(appArray)
     } catch (err: any) {
+      console.error("Failed to fetch applications:", err.response?.status, err.response?.data || err.message)
       setError(err.response?.data?.message || "Failed to load applications")
-      setApplications([]) // Reset to empty array on error
+      setApplications([])
     } finally {
       setLoading(false)
     }
@@ -91,7 +96,7 @@ export default function InstructorApplicationsPage() {
 
   const filteredApplications = Array.isArray(applications) ? applications.filter(app => {
     if (filter === "all") return true
-    return app.status === filter
+    return app.status.toLowerCase() === filter.toLowerCase()
   }) : []
 
   return (
@@ -168,11 +173,11 @@ export default function InstructorApplicationsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                        {app.userId.name.charAt(0).toUpperCase()}
+                        {app.name.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-white">{app.userId.name}</h3>
-                        <p className="text-sm text-slate-400">{app.userId.email}</p>
+                        <h3 className="text-lg font-semibold text-white">{app.name}</h3>
+                        <p className="text-sm text-slate-400">@{app.username}</p>
                       </div>
                     </div>
 
@@ -196,27 +201,27 @@ export default function InstructorApplicationsPage() {
                     )}
 
                     <div className="flex items-center gap-4 text-xs text-slate-500">
-                      <span>Applied: {new Date(app.appliedAt).toLocaleDateString()}</span>
+                      <span>Applied: {new Date(app.createdAt).toLocaleDateString()}</span>
                       <span className={`px-2 py-1 rounded ${
-                        app.status === "approved" ? "bg-green-500/20 text-green-300" :
-                        app.status === "rejected" ? "bg-red-500/20 text-red-300" :
+                        app.status.toLowerCase() === "approved" ? "bg-green-500/20 text-green-300" :
+                        app.status.toLowerCase() === "rejected" ? "bg-red-500/20 text-red-300" :
                         "bg-yellow-500/20 text-yellow-300"
                       }`}>
-                        {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                        {app.status}
                       </span>
                     </div>
                   </div>
 
-                  {app.status === "pending" && (
+                  {app.status.toLowerCase() === "pending" && (
                     <div className="flex gap-2 ml-4">
                       <button
-                        onClick={() => handleApprove(app.userId._id)}
+                        onClick={() => handleApprove(app.userId)}
                         className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-medium transition"
                       >
                         Approve
                       </button>
                       <button
-                        onClick={() => handleReject(app.userId._id)}
+                        onClick={() => handleReject(app.userId)}
                         className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-medium transition"
                       >
                         Reject
