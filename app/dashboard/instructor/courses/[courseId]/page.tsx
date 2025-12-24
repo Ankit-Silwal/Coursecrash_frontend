@@ -1,7 +1,6 @@
 "use client"
-import { use } from 'react'
 import api from '@/utils/axios'
-import { useEffect, useState } from 'react'
+import { use, useEffect, useState } from 'react'
 
 type PageProps = {
   params: Promise<{
@@ -41,9 +40,13 @@ export default function CourseDetailsPage({ params }: PageProps) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [lessonToDelete, setLessonToDelete] = useState<string | null>(null)
 
-  const fetchLessons = async () => {
+  const fetchLessons = async (id?: string) => {
     try {
-      const res = await api.get(`/instructor/courses/${courseId}/lessons`)
+      if (!id) {
+        setError('Course ID is missing')
+        return
+      }
+      const res = await api.get(`/instructor/courses/${id}/lessons`)
       const list = res.data.data?.lessons || res.data.lessons || [];
       
       const lessonsWithOrder = list
@@ -100,7 +103,7 @@ export default function CourseDetailsPage({ params }: PageProps) {
       // If we still don't have valid lesson data, refetch instead
       if (!lessonData || !lessonData._id) {
         console.log('No valid lesson data in response, refetching all lessons...')
-        await fetchLessons()
+        await fetchLessons(courseId)
         setLessonTitle('')
         setSuccess('Lesson created successfully')
         setTimeout(() => setSuccess(''), 3000)
@@ -251,9 +254,7 @@ export default function CourseDetailsPage({ params }: PageProps) {
   }
 
   useEffect(() => {
-    if (courseId) {
-      fetchLessons()
-    }
+    fetchLessons(courseId)
   }, [courseId])
 
   return (

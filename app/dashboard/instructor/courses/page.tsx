@@ -101,15 +101,32 @@ function InstructorCoursesPageContent() {
   async function fetchEnrollments() {
     try {
       setLoadingEnrollments(true)
-      const res = await api.get("/instructor/enrollments")
-      let allEnrollments = res.data.data?.enrollments || []
+      const res = await api.get(
+        selectedCourseId
+          ? `/instructor/enrollments?courseId=${selectedCourseId}`
+          : "/instructor/enrollments"
+      )
+
+      // Backends sometimes wrap differently; normalize the list
+      let allEnrollments =
+        res.data?.data?.enrollments ||
+        res.data?.enrollments ||
+        res.data?.data ||
+        []
       
       // Filter by selected course if one is selected
       if (selectedCourseId) {
         allEnrollments = allEnrollments.filter((e: Enrollment) => e.courseId === selectedCourseId)
       }
       
-      setEnrollments(allEnrollments)
+      setEnrollments(
+        (allEnrollments || [])
+          .filter(Boolean)
+          .map((e: Enrollment) => ({
+            ...e,
+            status: e.status || "pending",
+          }))
+      )
     } catch (err) {
       console.error("Failed to fetch enrollments:", err)
     } finally {
