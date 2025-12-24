@@ -7,11 +7,12 @@ import Link from "next/link"
 
 type Instructor = {
   _id: string
-  name: string
-  email: string
-  role: string
+  username?: string
+  name?: string
+  email?: string
+  role?: string
   isBlocked?: boolean
-  createdAt: string
+  createdAt?: string
 }
 
 export default function InstructorsManagementPage() {
@@ -19,7 +20,6 @@ export default function InstructorsManagementPage() {
   const [instructors, setInstructors] = useState<Instructor[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
 
   useEffect(() => {
     checkAuthAndFetch()
@@ -43,45 +43,20 @@ export default function InstructorsManagementPage() {
   const fetchInstructors = async () => {
     try {
       setLoading(true)
-      // Fetch all users and filter instructors
-      const res = await api.get("/admin/allusers")
-      const allUsers = res.data.data || res.data.users || []
-      const instructorUsers = allUsers.filter((u: any) => u.role === "instructor")
-      setInstructors(instructorUsers)
+      setError("")
+      const res = await api.get("/admin/allinstructors")
+      const list = res.data?.data?.instructors || res.data?.instructors || []
+      const arr = Array.isArray(list) ? list : []
+      setInstructors(arr)
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to load instructors")
+      setInstructors([])
     } finally {
       setLoading(false)
     }
   }
 
-  const handleBlock = async (instructorId: string) => {
-    try {
-      setError("")
-      setSuccess("")
-      await api.post(`/admin/instructors/${instructorId}/block`)
-      setSuccess("Instructor blocked successfully")
-      await fetchInstructors()
-      setTimeout(() => setSuccess(""), 3000)
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to block instructor")
-      setTimeout(() => setError(""), 3000)
-    }
-  }
-
-  const handleUnblock = async (instructorId: string) => {
-    try {
-      setError("")
-      setSuccess("")
-      await api.post(`/admin/instructors/${instructorId}/unblock`)
-      setSuccess("Instructor unblocked successfully")
-      await fetchInstructors()
-      setTimeout(() => setSuccess(""), 3000)
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to unblock instructor")
-      setTimeout(() => setError(""), 3000)
-    }
-  }
+  // Block/Unblock actions removed per request
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
@@ -98,8 +73,10 @@ export default function InstructorsManagementPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Instructor Management</h1>
-          <p className="text-slate-400">Block or unblock instructors</p>
+          <p className="text-slate-400">View instructors</p>
         </div>
+
+        {/* Removed All/Blocked toggle */}
 
         {/* Alerts */}
         {error && (
@@ -107,11 +84,7 @@ export default function InstructorsManagementPage() {
             {error}
           </div>
         )}
-        {success && (
-          <div className="mb-6 p-4 bg-green-500/20 border border-green-500 rounded-lg text-green-300">
-            {success}
-          </div>
-        )}
+        {/* Success alert removed */}
 
         {/* Instructors List */}
         {loading ? (
@@ -136,39 +109,19 @@ export default function InstructorsManagementPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 bg-orange-600 rounded-full flex items-center justify-center text-white text-xl font-semibold">
-                      {instructor.name.charAt(0).toUpperCase()}
+                      {(instructor.name || instructor.username || "I").charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-white mb-1">{instructor.name}</h3>
-                      <p className="text-sm text-slate-400 mb-2">{instructor.email}</p>
+                      <h3 className="text-lg font-semibold text-white mb-1">{instructor.name || instructor.username || "Unknown"}</h3>
+                      <p className="text-sm text-slate-400 mb-2">{instructor.email || "N/A"}</p>
                       <div className="flex items-center gap-3 text-xs text-slate-500">
-                        <span>Joined: {new Date(instructor.createdAt).toLocaleDateString()}</span>
-                        {instructor.isBlocked && (
-                          <span className="px-2 py-1 bg-red-500/20 text-red-300 rounded">
-                            Blocked
-                          </span>
-                        )}
+                        <span>Joined: {instructor.createdAt ? new Date(instructor.createdAt).toLocaleDateString() : "N/A"}</span>
+                        {/* Removed blocked badge */}
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
-                    {instructor.isBlocked ? (
-                      <button
-                        onClick={() => handleUnblock(instructor._id)}
-                        className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-medium transition"
-                      >
-                        Unblock
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleBlock(instructor._id)}
-                        className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-medium transition"
-                      >
-                        Block
-                      </button>
-                    )}
-                  </div>
+                  {/* Block/Unblock controls removed */}
                 </div>
               </div>
             ))}
