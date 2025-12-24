@@ -39,6 +39,7 @@ export default function CourseLessonsPage({ params }: PageProps) {
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null)
   const [lessonContent, setLessonContent] = useState<any>(null)
   const [contentLoading, setContentLoading] = useState(false)
+  const [videoError, setVideoError] = useState(false)
 
   useEffect(() => {
     if (courseId) {
@@ -77,45 +78,75 @@ export default function CourseLessonsPage({ params }: PageProps) {
     try {
       setContentLoading(true)
       setError("")
+      setVideoError(false)
       
-      console.log('Fetching content for lesson:', lessonId, 'course:', courseId)
+      let res
+      let lastError: any = null
       
-      // Try different API patterns based on your backend
-      let res;
-      
+      // Method 1: Query parameter
       try {
-        // Method 1: Query parameter
         res = await api.get(`/user/lessons/${lessonId}`, {
           params: { courseId }
         })
-      } catch (err1) {
-        console.log('Method 1 failed, trying Method 2...')
+      } catch (err1: any) {
+        lastError = err1
+        // If 404, silently treat as no content available
+        if (err1.response?.status === 404) {
+          setLessonContent({})
+          setError("")
+          return
+        }
+        
+        // Try Method 2: In URL path
         try {
-          // Method 2: In URL path
           res = await api.get(`/user/courses/${courseId}/lessons/${lessonId}`)
-        } catch (err2) {
-          console.log('Method 2 failed, trying Method 3...')
-          // Method 3: POST with body
-          res = await api.post(`/user/lessons/${lessonId}`, {
-            courseId
-          })
+        } catch (err2: any) {
+          lastError = err2
+          // If 404, silently treat as no content available
+          if (err2.response?.status === 404) {
+            setLessonContent({})
+            setError("")
+            return
+          }
+          
+          // Try Method 3: POST with body
+          try {
+            res = await api.post(`/user/lessons/${lessonId}`, {
+              courseId
+            })
+          } catch (err3: any) {
+            lastError = err3
+            // If 404, silently treat as no content available
+            if (err3.response?.status === 404) {
+              setLessonContent({})
+              setError("")
+              return
+            }
+            // All methods failed - throw last error
+            throw lastError
+          }
         }
       }
       
-      console.log('Lesson content response:', res.data)
-      
-      const content = res.data.data || res.data
-      setLessonContent(content)
+      if (res) {
+        const content = res.data.data || res.data
+        setLessonContent(content)
+      }
       
     } catch (err: any) {
-      console.error('Fetch lesson content error:', err)
-      console.error('Error response:', err.response?.data)
-      
-      const errorMsg = err.response?.data?.message || 
-                      err.response?.data?.error ||
-                      err.message || 
-                      "Failed to load lesson content"
-      setError(errorMsg)
+      // Only log and show non-404 errors
+      if (err.response?.status !== 404) {
+        console.error('Fetch lesson content error:', err)
+        const errorMsg = err.response?.data?.message || 
+                        err.response?.data?.error ||
+                        err.message || 
+                        "Failed to load lesson content"
+        setError(errorMsg)
+      } else {
+        // 404 means no content yet - show empty state silently
+        setLessonContent({})
+        setError("")
+      }
     } finally {
       setContentLoading(false)
     }
@@ -123,6 +154,15 @@ export default function CourseLessonsPage({ params }: PageProps) {
 
   const handleLessonClick = (lesson: Lesson) => {
     setSelectedLesson(lesson)
+    setVideoError(false)
+    
+    // If lesson already has contentUrl, use it directly
+    if (lesson.contentUrl) {
+      setLessonContent({ contentUrl: lesson.contentUrl, content: undefined })
+      setContentLoading(false)
+      return
+    }
+    
     setLessonContent(null)
     fetchLessonContent(lesson._id)
   }
@@ -157,6 +197,13 @@ export default function CourseLessonsPage({ params }: PageProps) {
     }
   }
 
+  const handleVideoError = () => {
+    console.error('Video failed to load')
+    setVideoError(true)
+  }
+
+  const hasContent = lessonContent && (lessonContent.contentUrl || lessonContent.content)
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
       {/* Navbar */}
@@ -175,7 +222,7 @@ export default function CourseLessonsPage({ params }: PageProps) {
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Error Alert */}
+        {/* Error Alert - Only show for real errors */}
         {error && (
           <div className="mb-6 p-4 bg-red-500/20 border border-red-500 rounded-lg text-red-300 flex items-start gap-3">
             <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -280,21 +327,50 @@ export default function CourseLessonsPage({ params }: PageProps) {
                     <div className="animate-spin w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4"></div>
                     <p className="text-slate-400">Loading lesson content...</p>
                   </div>
-                ) : lessonContent ? (
+                ) : hasContent ? (
                   <div className="space-y-6">
                     {/* VIDEO Content */}
                     {selectedLesson.type === "VIDEO" && lessonContent.contentUrl && (
-                      <div className="bg-black rounded-lg overflow-hidden shadow-2xl">
-                        <video
-                          controls
-                          controlsList="nodownload"
-                          className="w-full"
-                          src={lessonContent.contentUrl}
-                        >
-                          Your browser does not support the video tag.
-                        </video>
+                      <div className="space-y-4">
+                        <div className="bg-slate-700/30 rounded-lg p-12 text-center">
+                          <svg className="w-20 h-20 mx-auto text-indigo-400 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <h3 className="text-xl font-semibold text-white mb-2">Video Lesson</h3>
+                          <p className="text-slate-400 mb-6">Click the button below to watch the video</p>
+                          <button
+                            onClick={() => getDownloadLink(selectedLesson._id)}
+                            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 transition text-white rounded-lg font-semibold inline-flex items-center justify-center gap-2"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Watch Video
+                          </button>
+                        </div>
                       </div>
                     )}
+
+                    {/* VIDEO Content - Old player kept as fallback
+                    {selectedLesson.type === "VIDEO" && lessonContent.contentUrl && (
+                      <div className="space-y-4">
+                        <div className="bg-black rounded-lg overflow-hidden shadow-2xl">
+                          <video
+                            key={lessonContent.contentUrl}
+                            controls
+                            controlsList="nodownload"
+                            className="w-full"
+                            src={lessonContent.contentUrl}
+                            preload="metadata"
+                          >
+                            Your browser does not support the video tag.
+                          </video>
+                        </div>
+                      </div>
+                    )}
+                    */}
 
                     {/* TEXT Content */}
                     {selectedLesson.type === "TEXT" && lessonContent.content && (
@@ -332,10 +408,12 @@ export default function CourseLessonsPage({ params }: PageProps) {
                       <div className="space-y-4">
                         <div className="bg-slate-700/30 rounded-lg p-6">
                           <audio
+                            key={lessonContent.contentUrl}
                             controls
                             controlsList="nodownload"
                             className="w-full"
                             src={lessonContent.contentUrl}
+                            preload="metadata"
                           >
                             Your browser does not support the audio tag.
                           </audio>
@@ -351,24 +429,15 @@ export default function CourseLessonsPage({ params }: PageProps) {
                         </button>
                       </div>
                     )}
-
-                    {/* No Content Available */}
-                    {!lessonContent.contentUrl && !lessonContent.content && (
-                      <div className="text-center py-16">
-                        <svg className="w-16 h-16 mx-auto text-slate-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <p className="text-slate-400 mb-2">No content available yet</p>
-                        <p className="text-slate-500 text-sm">The instructor hasn't uploaded content for this lesson</p>
-                      </div>
-                    )}
                   </div>
                 ) : (
-                  <div className="text-center py-16 text-slate-400">
+                  // No Content Available
+                  <div className="text-center py-16">
                     <svg className="w-16 h-16 mx-auto text-slate-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    <p>Click on a lesson to view content</p>
+                    <p className="text-slate-400 mb-2 text-lg">No content available yet</p>
+                    <p className="text-slate-500 text-sm">The instructor hasn't uploaded content for this lesson</p>
                   </div>
                 )}
               </div>
