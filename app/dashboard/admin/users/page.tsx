@@ -7,10 +7,11 @@ import Link from "next/link"
 
 type User = {
   _id: string
-  name: string
+  username: string
   email: string
   role: "user" | "instructor" | "admin"
   createdAt: string
+  isVerified?: boolean
 }
 
 export default function UsersManagementPage() {
@@ -44,10 +45,19 @@ export default function UsersManagementPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true)
-      const res = await api.get("/admin/ausers")
-      setUsers(res.data.data || res.data.users || [])
+      setError("")
+      const res = await api.get("/admin/allusers")
+      console.log("Users response:", res.data)
+      
+      // Get users from res.data.data.users
+      const userArray = res.data.data?.users || []
+      
+      console.log("Parsed users:", userArray)
+      setUsers(userArray)
     } catch (err: any) {
+      console.error("Failed to fetch users:", err.response?.data || err.message)
       setError(err.response?.data?.message || "Failed to load users")
+      setUsers([])
     } finally {
       setLoading(false)
     }
@@ -125,7 +135,7 @@ export default function UsersManagementPage() {
             <div className="animate-spin w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
             <p className="text-slate-400">Loading users...</p>
           </div>
-        ) : users.length === 0 ? (
+        ) : !Array.isArray(users) || users.length === 0 ? (
           <div className="text-center py-12 bg-slate-800/50 border border-slate-700 rounded-xl">
             <svg className="w-16 h-16 mx-auto text-slate-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -145,14 +155,14 @@ export default function UsersManagementPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-700">
-                {users.map((user) => (
+                {Array.isArray(users) && users.map((user) => (
                   <tr key={user._id} className="hover:bg-slate-700/30 transition">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                          {user.name.charAt(0).toUpperCase()}
+                          {user.username.charAt(0).toUpperCase()}
                         </div>
-                        <span className="text-white font-medium">{user.name}</span>
+                        <span className="text-white font-medium">{user.username}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-slate-300">{user.email}</td>

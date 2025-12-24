@@ -44,7 +44,7 @@ export default function InstructorsManagementPage() {
     try {
       setLoading(true)
       // Fetch all users and filter instructors
-      const res = await api.get("/admin/ausers")
+      const res = await api.get("/admin/allusers")
       const allUsers = res.data.data || res.data.users || []
       const instructorUsers = allUsers.filter((u: any) => u.role === "instructor")
       setInstructors(instructorUsers)
