@@ -119,6 +119,15 @@ export default function LoginPage() {
             Register
           </span>
         </p>
+        <p className="text-slate-400 text-sm text-center mt-2">
+          <button
+            type="button"
+            className="text-indigo-400 hover:text-indigo-300 font-semibold transition"
+            onClick={()=>router.push('/forgot-password')}
+          >
+            Forgot password?
+          </button>
+        </p>
       </div>
     </div>
   )

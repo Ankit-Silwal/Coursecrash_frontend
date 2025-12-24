@@ -11,6 +11,7 @@ export default function VerifyOtpPage() {
   const [messageType, setMessageType] = useState<'success' | 'error' | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [email, setEmail] = useState<string | null>(null)
+  const [resent, setResent] = useState<boolean>(false)
   const searchParams = useSearchParams()
 
   useEffect(() => {
@@ -29,7 +30,8 @@ export default function VerifyOtpPage() {
     setError(null)
     setIsLoading(true)
     try {
-      const res = await api.post('/auth/verify-otp', { email, otp })
+      const endpoint = resent ? '/auth/verify-resend-otp' : '/auth/verify-otp'
+      const res = await api.post(endpoint, { email, otp })
       if (res.data.success) {
         router.push('/login')
       } else {
@@ -58,6 +60,7 @@ export default function VerifyOtpPage() {
       console.log("Resend OTP response:", res.data)
       if (res.data.success) {
         setError(res.data.message)
+        setResent(true)
         setMessageType("success")
       } else {
         setError(res.data.message)
