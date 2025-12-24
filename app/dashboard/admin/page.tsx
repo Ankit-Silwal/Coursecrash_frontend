@@ -9,6 +9,7 @@ export default function AdminDashboardPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
+  const [authError, setAuthError] = useState("")
 
   useEffect(() => {
     checkAuth()
@@ -16,14 +17,29 @@ export default function AdminDashboardPage() {
 
   const checkAuth = async () => {
     try {
-      const res = await api.get("/user/me")
-      if (res.data.data?.role !== "admin") {
-        router.push("/login")
+      console.log('Checking admin auth via /auth/status...')
+      const res = await api.get("/auth/status")
+      console.log('Auth status response:', res.data)
+      
+      const user = res.data.user || res.data.data || res.data
+      const role = user?.role
+      console.log('User role from sessionId:', role)
+      
+      if (role !== "admin") {
+        console.log('Not admin, redirecting to login')
+        setAuthError(`Access denied. Your role is: ${role || 'unknown'}`)
+        setTimeout(() => router.push("/login"), 2000)
         return
       }
-      setUser(res.data.data)
-    } catch (err) {
-      router.push("/admin/login")
+      
+      // Set user details
+      console.log('Admin access granted')
+      setUser(user)
+    } catch (err: any) {
+      console.error('Auth check error:', err)
+      console.error('Error details:', err.response?.data)
+      setAuthError(err.response?.data?.message || "Authentication failed - please log in")
+      setTimeout(() => router.push("/login"), 2000)
     } finally {
       setLoading(false)
     }
@@ -32,16 +48,35 @@ export default function AdminDashboardPage() {
   const handleLogout = async () => {
     try {
       await api.post("/user/logout")
-      router.push("/admin/login")
+      router.push("/login")
     } catch (err) {
       console.error("Logout error:", err)
+      router.push("/login")
     }
   }
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
-        <div className="animate-spin w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full"></div>
+        <div className="text-center">
+          <div className="animate-spin w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-slate-400">Verifying admin access...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (authError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-4">
+        <div className="bg-slate-800/50 border border-red-500 rounded-xl p-8 max-w-md w-full text-center">
+          <svg className="w-16 h-16 mx-auto text-red-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h2 className="text-xl font-bold text-white mb-2">Access Denied</h2>
+          <p className="text-red-300 mb-4">{authError}</p>
+          <p className="text-slate-400 text-sm">Redirecting to login...</p>
+        </div>
       </div>
     )
   }

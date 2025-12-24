@@ -32,14 +32,16 @@ export default function InstructorApplicationsPage() {
 
   const checkAuthAndFetch = async () => {
     try {
-      const authRes = await api.get("/user/me")
-      if (authRes.data.data?.role !== "admin") {
+      const authRes = await api.get("/auth/status")
+      const user = authRes.data.user || authRes.data.data || authRes.data
+      if (user?.role !== "admin") {
         router.push("/login")
         return
       }
       await fetchApplications()
-    } catch (err) {
-      router.push("/admin/login")
+    } catch (err: any) {
+      console.error('Auth check failed:', err)
+      router.push("/login")
     }
   }
 
@@ -47,9 +49,13 @@ export default function InstructorApplicationsPage() {
     try {
       setLoading(true)
       const res = await api.get("/admin/instructor-applications")
-      setApplications(res.data.data || res.data.applications || [])
+      const appData = res.data.data || res.data.applications || res.data || []
+      // Ensure it's always an array
+      const appArray = Array.isArray(appData) ? appData : []
+      setApplications(appArray)
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to load applications")
+      setApplications([]) // Reset to empty array on error
     } finally {
       setLoading(false)
     }
@@ -83,10 +89,10 @@ export default function InstructorApplicationsPage() {
     }
   }
 
-  const filteredApplications = applications.filter(app => {
+  const filteredApplications = Array.isArray(applications) ? applications.filter(app => {
     if (filter === "all") return true
     return app.status === filter
-  })
+  }) : []
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">

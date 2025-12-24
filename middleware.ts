@@ -10,17 +10,15 @@ export async function middleware(request: NextRequest) {
       const sessionId = request.cookies.get('sessionId')?.value
 
       if (!sessionId) {
-        // Redirect to appropriate login page
-        const loginUrl = pathname.startsWith('/dashboard/admin') ? '/admin/login' : '/login'
-        return NextResponse.redirect(new URL(loginUrl, request.url))
+        // Redirect to regular login page for all protected routes
+        return NextResponse.redirect(new URL('/login', request.url))
       }
 
       // Session exists, allow access and let ProtectedRoute component handle role verification
       return NextResponse.next()
     } catch (error) {
       console.error('Middleware error:', error)
-      const loginUrl = pathname.startsWith('/dashboard/admin') ? '/admin/login' : '/login'
-      return NextResponse.redirect(new URL(loginUrl, request.url))
+      return NextResponse.redirect(new URL('/login', request.url))
     }
   }
 

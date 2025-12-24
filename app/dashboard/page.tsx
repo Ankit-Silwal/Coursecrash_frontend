@@ -24,6 +24,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [applyingForInstructor, setApplyingForInstructor] = useState(false)
+  const [hasAppliedForInstructor, setHasAppliedForInstructor] = useState(false)
   const [applyMessage, setApplyMessage] = useState("")
   const [enrollments, setEnrollments] = useState<Enrollment[]>([])
   const [loadingEnrollments, setLoadingEnrollments] = useState(false)
@@ -86,14 +87,31 @@ export default function DashboardPage() {
   }
 
   const handleApplyInstructor = async () => {
+    // Prevent double submissions
+    if (applyingForInstructor || hasAppliedForInstructor) {
+      return
+    }
+
     try {
       setApplyingForInstructor(true)
       setApplyMessage("")
-      const res = await api.post('/user/apply-instructor')
+      const res = await api.post('/user/apply-instructor', {})
       setApplyMessage(res.data.message || 'Application submitted successfully!')
+      setHasAppliedForInstructor(true)
       setTimeout(() => setApplyMessage(""), 3000)
     } catch (err: any) {
+      // Handle 409 Conflict - user has already applied
+      if (err.response?.status === 409) {
+        setApplyMessage('You have already applied to become an instructor.')
+        setHasAppliedForInstructor(true)
+        setTimeout(() => setApplyMessage(""), 3000)
+        return
+      }
+      
+      // Handle other errors
+      console.error('Apply instructor error:', err.response?.status, err.response?.data)
       setApplyMessage(err.response?.data?.message || 'Failed to apply. Please try again.')
+      setTimeout(() => setApplyMessage(""), 3000)
     } finally {
       setApplyingForInstructor(false)
     }
@@ -183,6 +201,14 @@ export default function DashboardPage() {
               Role: <span className="text-indigo-400 font-semibold">{user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'User'}</span>
             </p>
             <div className="flex flex-wrap gap-3">
+              {user?.role === 'admin' && (
+                <button
+                  onClick={() => router.push('/dashboard/admin')}
+                  className="px-6 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 transition text-white font-semibold"
+                >
+                  Go to Admin Dashboard
+                </button>
+              )}
               {(user?.role === 'instructor' || user?.role === 'admin') && (
                 <button
                   onClick={() => router.push('/dashboard/instructor/courses')}
@@ -201,10 +227,10 @@ export default function DashboardPage() {
                   </button>
                   <button
                     onClick={handleApplyInstructor}
-                    disabled={applyingForInstructor}
-                    className="px-6 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 transition text-white font-semibold disabled:opacity-50"
+                    disabled={applyingForInstructor || hasAppliedForInstructor}
+                    className="px-6 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 transition text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {applyingForInstructor ? 'Applying...' : 'Apply to be Instructor'}
+                    {applyingForInstructor ? 'Applying...' : hasAppliedForInstructor ? 'Application Pending' : 'Apply to be Instructor'}
                   </button>
                 </>
               )}

@@ -28,14 +28,16 @@ export default function UsersManagementPage() {
 
   const checkAuthAndFetch = async () => {
     try {
-      const authRes = await api.get("/user/me")
-      if (authRes.data.data?.role !== "admin") {
+      const authRes = await api.get("/auth/status")
+      const user = authRes.data.user || authRes.data.data || authRes.data
+      if (user?.role !== "admin") {
         router.push("/login")
         return
       }
       await fetchUsers()
-    } catch (err) {
-      router.push("/admin/login")
+    } catch (err: any) {
+      console.error('Auth check failed:', err)
+      router.push("/login")
     }
   }
 
